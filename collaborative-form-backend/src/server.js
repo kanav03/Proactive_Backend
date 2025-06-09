@@ -23,14 +23,17 @@ const server = http.createServer(app);
 
 // Get allowed origins from environment variable or use wildcard as fallback
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',') 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
   : '*';
+
+console.log('Allowed Origins:', allowedOrigins); // Debug log
 
 // Configure Socket.IO with CORS settings
 const io = socketIo(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
   }
 });
 
@@ -43,15 +46,21 @@ app.use(cors({
     if (allowedOrigins === '*') {
       return callback(null, true);
     }
-    
-    if (Array.isArray(allowedOrigins) && allowedOrigins.indexOf(origin) !== -1) {
-      return callback(null, true);
+
+    if (Array.isArray(allowedOrigins)) {
+      const isAllowed = allowedOrigins.includes(origin);
+      console.log('Origin:', origin, 'Is Allowed:', isAllowed); // Debug log
+      if (isAllowed) {
+        return callback(null, true);
+      }
     }
     
     callback(new Error('Not allowed by CORS'));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
+
 app.use(express.json());
 
 // Database connection
