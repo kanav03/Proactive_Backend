@@ -20,15 +20,38 @@ const { setupSocketHandlers } = require('./utils/socket');
 // Initialize express app
 const app = express();
 const server = http.createServer(app);
+
+// Get allowed origins from environment variable or use wildcard as fallback
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : '*';
+
+// Configure Socket.IO with CORS settings
 const io = socketIo(server, {
   cors: {
-    origin: '*',
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE']
   }
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins === '*') {
+      return callback(null, true);
+    }
+    
+    if (Array.isArray(allowedOrigins) && allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // Database connection

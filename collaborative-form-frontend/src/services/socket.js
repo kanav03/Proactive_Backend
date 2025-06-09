@@ -1,5 +1,8 @@
 import { io } from 'socket.io-client';
 
+// Use environment variable for Socket.IO URL or default to localhost for development
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5001';
+
 class SocketService {
   constructor() {
     this.socket = null;
@@ -9,7 +12,7 @@ class SocketService {
   connect() {
     if (this.socket) return;
 
-    this.socket = io('http://localhost:5001', {
+    this.socket = io(SOCKET_URL, {
       transports: ['websocket'],
       autoConnect: true,
     });
